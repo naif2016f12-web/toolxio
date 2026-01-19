@@ -63,6 +63,11 @@ export default function Sidebar() {
 
             <div className="p-4 border-t border-border mt-auto">
                 <PWAInstall />
+                <div className="mt-4 grid grid-cols-2 gap-2 mb-4">
+                    <Link href="/privacy" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">سياسة الخصوصية</Link>
+                    <Link href="/terms" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">شروط الاستخدام</Link>
+                    <Link href="/contact" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors col-span-2 text-center">اتصل بنا</Link>
+                </div>
                 <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors mt-2">
                     <Settings className="w-5 h-5" />
                     <span className="font-medium">الإعدادات</span>
