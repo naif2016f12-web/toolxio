@@ -14,14 +14,30 @@ export default function VideoAICreator() {
     const [progress, setProgress] = useState(0);
     const [videoGenerated, setVideoGenerated] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [videoUrl, setVideoUrl] = useState<string>("");
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    const startGeneration = () => {
+    const startGeneration = async () => {
         if (!prompt) return;
         setIsGenerating(true);
         setProgress(0);
         setVideoGenerated(false);
         setIsPlaying(false);
+
+        try {
+            console.log("جاري البدء في معالجة الفيديو...");
+
+            // Simulating the user's "Magic Code" logic
+            const response = await fetch(SAMPLE_VIDEO_URL);
+            const data = await response.blob();
+
+            // Transform to Blob and create object URL for immediate display/download
+            const blobUrl = URL.createObjectURL(new Blob([data], { type: 'video/mp4' }));
+            setVideoUrl(blobUrl);
+            console.log("تم تحميل بيانات الفيديو بنجاح!");
+        } catch (error) {
+            console.error("حدث خطأ أثناء إظهار الفيديو:", error);
+        }
     };
 
     const togglePlay = () => {
@@ -36,12 +52,14 @@ export default function VideoAICreator() {
     };
 
     const handleDownload = () => {
+        if (!videoUrl) return;
         const link = document.createElement("a");
-        link.href = SAMPLE_VIDEO_URL;
-        link.download = `Toolxio-AI-Video-${Date.now()}.mp4`;
+        link.href = videoUrl;
+        link.download = `Toolxio_Video_${Date.now()}.mp4`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        console.log("بدأ التحميل بنجاح!");
     };
 
     useEffect(() => {
@@ -170,7 +188,7 @@ export default function VideoAICreator() {
                                 >
                                     <video
                                         ref={videoRef}
-                                        src={SAMPLE_VIDEO_URL}
+                                        src={videoUrl}
                                         className="w-full h-full object-cover"
                                         loop
                                         onPlay={() => setIsPlaying(true)}
