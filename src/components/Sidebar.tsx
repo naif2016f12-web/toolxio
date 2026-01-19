@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import PWAInstall from "./PWAInstall";
 
 const sidebarItems = [
     { name: "لوحة التحكم", icon: LayoutDashboard, href: "/" },
@@ -61,7 +62,8 @@ export default function Sidebar() {
             </nav>
 
             <div className="p-4 border-t border-border mt-auto">
-                <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors">
+                <PWAInstall />
+                <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors mt-2">
                     <Settings className="w-5 h-5" />
                     <span className="font-medium">الإعدادات</span>
                 </button>

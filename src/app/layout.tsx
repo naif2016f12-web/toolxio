@@ -17,6 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="dark">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0b0f1a" />
+      </head>
       <body className={`${inter.className} min-h-screen bg-background text-foreground flex`}>
         <Sidebar />
         <main className="flex-1 mr-64 p-8 min-h-screen">
