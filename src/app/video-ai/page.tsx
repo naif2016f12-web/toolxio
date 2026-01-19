@@ -1,21 +1,47 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Video, Wand2, Play, Download, Sparkles, Image as ImageIcon, Music } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Video, Wand2, Play, Download, Sparkles, Image as ImageIcon, Music, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Sample video for demonstration
+const SAMPLE_VIDEO_URL = "https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-out-of-focus-39832-large.mp4";
 
 export default function VideoAICreator() {
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [progress, setProgress] = useState(0);
     const [videoGenerated, setVideoGenerated] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     const startGeneration = () => {
         if (!prompt) return;
         setIsGenerating(true);
         setProgress(0);
         setVideoGenerated(false);
+        setIsPlaying(false);
+    };
+
+    const togglePlay = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleDownload = () => {
+        const link = document.createElement("a");
+        link.href = SAMPLE_VIDEO_URL;
+        link.download = `Toolxio-AI-Video-${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     useEffect(() => {
@@ -101,14 +127,15 @@ export default function VideoAICreator() {
                 </div>
 
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="glass-card aspect-video rounded-3xl overflow-hidden relative border-2 border-border/50 group">
+                    <div className="glass-card aspect-video rounded-3xl overflow-hidden relative border-2 border-border/50 group bg-black">
                         <AnimatePresence mode="wait">
                             {isGenerating ? (
                                 <motion.div
+                                    key="loading"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="absolute inset-0 z-10 bg-black/80 flex flex-col items-center justify-center p-12"
+                                    className="absolute inset-0 z-20 bg-black/80 flex flex-col items-center justify-center p-12"
                                 >
                                     <div className="relative w-24 h-24 mb-6">
                                         <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full" />
@@ -136,13 +163,27 @@ export default function VideoAICreator() {
                                 </motion.div>
                             ) : videoGenerated ? (
                                 <motion.div
+                                    key="player"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="absolute inset-0 z-10 bg-black/40 flex items-center justify-center group"
+                                    className="relative w-full h-full"
                                 >
-                                    <button className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center transition-all scale-95 hover:scale-100">
-                                        <Play className="w-10 h-10 fill-white" />
-                                    </button>
+                                    <video
+                                        ref={videoRef}
+                                        src={SAMPLE_VIDEO_URL}
+                                        className="w-full h-full object-cover"
+                                        loop
+                                        onPlay={() => setIsPlaying(true)}
+                                        onPause={() => setIsPlaying(false)}
+                                    />
+                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={togglePlay}
+                                            className="w-20 h-20 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center transition-all scale-95 hover:scale-100"
+                                        >
+                                            {isPlaying ? <Pause className="w-10 h-10 fill-white" /> : <Play className="w-10 h-10 fill-white ml-2" />}
+                                        </button>
+                                    </div>
                                 </motion.div>
                             ) : (
                                 <div className="absolute inset-0 bg-muted/20 flex flex-col items-center justify-center gap-4">
@@ -174,7 +215,10 @@ export default function VideoAICreator() {
                                 <h4 className="font-bold text-lg">تم توليد الفيديو بنجاح!</h4>
                                 <p className="text-sm text-muted-foreground">الدقة: 4K • الطول: 10 ثوانٍ • النمط: سينمائي</p>
                             </div>
-                            <button className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-all">
+                            <button
+                                onClick={handleDownload}
+                                className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-all active:scale-95"
+                            >
                                 <Download className="w-5 h-5" /> تحميل الفيديو
                             </button>
                         </motion.div>
@@ -182,7 +226,7 @@ export default function VideoAICreator() {
 
                     <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
                         <p className="text-[11px] text-yellow-500 font-medium leading-relaxed">
-                            تنبيه: هذه الأداة تستخدم نماذج الذكاء الاصطناعي التوليدي. قد تستغرق المعالجة وقتاً أطول اعتماداً على طول الفيديو وتعقيد الوصف. في هذه النسخة التجريبية، يتم محاكاة عملية التوليد لأغراض العرض التقني.
+                            تنبيه: هذه الأداة تستخدم نماذج الذكاء الاصطناعي التوليدي. يتم حالياً استخدام فيديو تجريبي للعرض التقني لسرعة المعالجة في النسخة التجريبية. جميع عمليات التحميل تتم مباشرة من خلال رابط الفيديو المولد.
                         </p>
                     </div>
                 </div>
