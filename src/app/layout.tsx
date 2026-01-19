@@ -20,6 +20,8 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0b0f1a" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3884075444224312"
+          crossOrigin="anonymous"></script>
       </head>
       <body className={`${inter.className} min-h-screen bg-background text-foreground flex`}>
         <Sidebar />
