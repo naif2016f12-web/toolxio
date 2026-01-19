@@ -9,25 +9,27 @@ import {
     Video,
     FileSearch,
     Settings,
-    HelpCircle
+    HelpCircle,
+    Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const sidebarItems = [
-    { name: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { name: "AI PPT Creator", icon: Presentation, href: "/ppt" },
-    { name: "AI Doc Writer", icon: FileText, href: "/doc" },
-    { name: "AI Sheets", icon: Table, href: "/sheets" },
-    { name: "Video Tools", icon: Video, href: "/video" },
-    { name: "PDF Tools", icon: FileSearch, href: "/pdf" },
+    { name: "لوحة التحكم", icon: LayoutDashboard, href: "/" },
+    { name: "منشئ العروض AI", icon: Presentation, href: "/ppt" },
+    { name: "كاتب المستندات AI", icon: FileText, href: "/doc" },
+    { name: "جداول البيانات AI", icon: Table, href: "/sheets" },
+    { name: "منشئ الفيديو AI", icon: Sparkles, iconColor: "text-purple-400", href: "/video-ai" },
+    { name: "أدوات الفيديو", icon: Video, href: "/video" },
+    { name: "أدوات PDF", icon: FileSearch, href: "/pdf" },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="w-64 h-screen bg-card border-r border-border flex flex-col fixed left-0 top-0 z-50">
+        <aside className="w-64 h-screen bg-card border-l border-border flex flex-col fixed right-0 top-0 z-50">
             <div className="p-6">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
                     Toolxio
@@ -61,11 +63,11 @@ export default function Sidebar() {
             <div className="p-4 border-t border-border mt-auto">
                 <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors">
                     <Settings className="w-5 h-5" />
-                    <span className="font-medium">Settings</span>
+                    <span className="font-medium">الإعدادات</span>
                 </button>
                 <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors">
                     <HelpCircle className="w-5 h-5" />
-                    <span className="font-medium">Help Center</span>
+                    <span className="font-medium">مركز المساعدة</span>
                 </button>
             </div>
         </aside>

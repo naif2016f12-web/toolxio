@@ -8,10 +8,10 @@ import { motion } from "framer-motion";
 
 export default function SheetsPage() {
     const [sheetName, setSheetName] = useState("");
-    const [columns, setColumns] = useState(["Column 1", "Column 2"]);
+    const [columns, setColumns] = useState(["العمود 1", "العمود 2"]);
     const [data, setData] = useState([
-        ["Data 1", "Data 2"],
-        ["Data 3", "Data 4"],
+        ["بيانات 1", "بيانات 2"],
+        ["بيانات 3", "بيانات 4"],
     ]);
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -20,7 +20,7 @@ export default function SheetsPage() {
     };
 
     const addColumn = () => {
-        setColumns([...columns, `Column ${columns.length + 1}`]);
+        setColumns([...columns, `العمود ${columns.length + 1}`]);
         setData(data.map((row) => [...row, ""]));
     };
 
@@ -46,7 +46,7 @@ export default function SheetsPage() {
             const ws = XLSX.utils.aoa_to_sheet([columns, ...data]);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-            XLSX.writeFile(wb, `${sheetName || "Toolxio-Sheet"}.xlsx`);
+            XLSX.writeFile(wb, `${sheetName || "Toolxio-جدول"}.xlsx`);
         } catch (error) {
             console.error("Failed to generate Excel:", error);
         } finally {
@@ -61,22 +61,22 @@ export default function SheetsPage() {
                     <div className="p-3 rounded-xl bg-green-500/10">
                         <Table className="w-6 h-6 text-green-500" />
                     </div>
-                    <h2 className="text-3xl font-bold">AI Sheets Generator</h2>
+                    <h2 className="text-3xl font-bold">منشئ جداول البيانات AI</h2>
                 </div>
                 <p className="text-muted-foreground text-lg">
-                    Generate smart spreadsheets for finances, schedules, or data tracking. Easy export to Excel XLSX.
+                    قم بتوليد جداول بيانات ذكية للشؤون المالية أو الجداول الزمنية أو تتبع البيانات. تصدير سهل إلى Excel XLSX.
                 </p>
             </header>
 
             <div className="glass-card p-6 rounded-2xl mb-8">
                 <label className="block text-sm font-medium mb-2 text-muted-foreground uppercase tracking-wider">
-                    Sheet Name
+                    اسم الجدول
                 </label>
                 <input
                     type="text"
                     value={sheetName}
                     onChange={(e) => setSheetName(e.target.value)}
-                    placeholder="e.g. Monthly Budget 2024"
+                    placeholder="مثال: ميزانية الشهر 2024"
                     className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all text-foreground"
                 />
             </div>
@@ -85,31 +85,31 @@ export default function SheetsPage() {
                 <div className="bg-muted/50 p-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <LayoutGrid className="w-5 h-5 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">Data Editor</span>
+                        <span className="font-semibold text-foreground">محرر البيانات</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={addColumn}
                             className="px-3 py-1 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg text-sm font-medium transition-all flex items-center gap-1"
                         >
-                            <Plus className="w-4 h-4" /> Add Column
+                            <Plus className="w-4 h-4" /> إضافة عمود
                         </button>
                         <button
                             onClick={addRow}
                             className="px-3 py-1 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-lg text-sm font-medium transition-all flex items-center gap-1"
                         >
-                            <Plus className="w-4 h-4" /> Add Row
+                            <Plus className="w-4 h-4" /> إضافة صف
                         </button>
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-right border-collapse">
                         <thead>
                             <tr className="bg-muted/30">
-                                <th className="p-4 border-b border-r border-border w-12 text-center text-xs font-bold text-muted-foreground">#</th>
+                                <th className="p-4 border-b border-l border-border w-12 text-center text-xs font-bold text-muted-foreground">#</th>
                                 {columns.map((col, i) => (
-                                    <th key={i} className="p-4 border-b border-r border-border min-w-[150px]">
+                                    <th key={i} className="p-4 border-b border-l border-border min-w-[150px]">
                                         <input
                                             type="text"
                                             value={col}
@@ -124,11 +124,11 @@ export default function SheetsPage() {
                         <tbody>
                             {data.map((row, rowIndex) => (
                                 <tr key={rowIndex} className="hover:bg-muted/10 transition-colors">
-                                    <td className="p-4 border-b border-r border-border text-center text-xs text-muted-foreground font-mono">
+                                    <td className="p-4 border-b border-l border-border text-center text-xs text-muted-foreground font-mono">
                                         {rowIndex + 1}
                                     </td>
                                     {row.map((cell, colIndex) => (
-                                        <td key={colIndex} className="p-4 border-b border-r border-border">
+                                        <td key={colIndex} className="p-4 border-b border-l border-border">
                                             <input
                                                 type="text"
                                                 value={cell}
@@ -162,7 +162,7 @@ export default function SheetsPage() {
                         : "bg-green-600 hover:bg-green-700 text-white shadow-xl shadow-green-600/20 active:scale-[0.98]"
                 )}
             >
-                <Download className="w-6 h-6" /> Export to Excel XLSX
+                <Download className="w-6 h-6" /> تصدير إلى ملف Excel XLSX
             </button>
         </div>
     );

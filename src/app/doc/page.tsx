@@ -21,9 +21,9 @@ export default function DocPage() {
                         properties: {},
                         children: [
                             new Paragraph({
-                                text: title || "Untitled Document",
+                                text: title || "مستند بدون عنوان",
                                 heading: HeadingLevel.HEADING_1,
-                                alignment: AlignmentType.CENTER,
+                                alignment: AlignmentType.RIGHT, // Right align for Arabic
                                 spacing: { after: 400 },
                             }),
                             ...content.split("\n").map((line) =>
@@ -32,8 +32,10 @@ export default function DocPage() {
                                         new TextRun({
                                             text: line,
                                             size: 24,
+                                            rightToLeft: true, // Enable RTL in docx
                                         }),
                                     ],
+                                    alignment: AlignmentType.RIGHT,
                                     spacing: { after: 200 },
                                 })
                             ),
@@ -43,7 +45,7 @@ export default function DocPage() {
             });
 
             const blob = await Packer.toBlob(doc);
-            saveAs(blob, `${title || "Toolxio-Document"}.docx`);
+            saveAs(blob, `${title || "Toolxio-مستند"}.docx`);
         } catch (error) {
             console.error("Failed to generate DOCX:", error);
         } finally {
@@ -58,10 +60,10 @@ export default function DocPage() {
                     <div className="p-3 rounded-xl bg-indigo-500/10">
                         <FileText className="w-6 h-6 text-indigo-500" />
                     </div>
-                    <h2 className="text-3xl font-bold">AI Document Writer</h2>
+                    <h2 className="text-3xl font-bold">كاتب المستندات AI</h2>
                 </div>
                 <p className="text-muted-foreground text-lg">
-                    Craft professional letters, reports, or essays. Your content is securely processed and exported to Word Docx format.
+                    قم بصياغة خطابات أو تقارير أو مقالات احترافية. يتم معالجة محتواك بأمان وتصديره بتنسيق Word Docx.
                 </p>
             </header>
 
@@ -71,10 +73,10 @@ export default function DocPage() {
                         <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Undo className="w-4 h-4" /></button>
                         <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Redo className="w-4 h-4" /></button>
                         <div className="w-[1px] h-4 bg-border mx-2" />
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Document Editor</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">محرر المستندات</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded-full uppercase">Auto-Saving</div>
+                        <div className="px-3 py-1 bg-green-500/10 text-green-500 text-[10px] font-bold rounded-full uppercase">حفظ تلقائي</div>
                     </div>
                 </div>
 
@@ -83,13 +85,13 @@ export default function DocPage() {
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Enter Document Title..."
+                        placeholder="أدخل عنوان المستند..."
                         className="w-full bg-transparent text-3xl font-bold mb-6 focus:outline-none placeholder:text-muted-foreground/30"
                     />
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="Start writing your document here..."
+                        placeholder="ابدأ في كتابة مستندك هنا..."
                         className="w-full bg-transparent text-lg text-muted-foreground resize-none focus:outline-none min-h-[300px] leading-relaxed"
                     />
                 </div>
@@ -105,9 +107,9 @@ export default function DocPage() {
                                 : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20"
                         )}
                     >
-                        {isGenerating ? "Generating..." : (
+                        {isGenerating ? "جاري التوليد..." : (
                             <>
-                                <Download className="w-5 h-5" /> Export to Word
+                                <Download className="w-5 h-5" /> تصدير إلى Word
                             </>
                         )}
                     </button>

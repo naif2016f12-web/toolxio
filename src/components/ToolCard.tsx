@@ -31,7 +31,7 @@ export default function ToolCard({ title, description, icon: Icon, color, href }
                         </p>
                     </div>
                     <div className="mt-auto pt-4 flex items-center text-sm font-medium text-blue-400 group-hover:text-blue-300">
-                        Open Tool →
+                        افتح الأداة ←
                     </div>
                 </div>
             </Link>
