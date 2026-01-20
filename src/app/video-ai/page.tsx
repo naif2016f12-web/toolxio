@@ -19,6 +19,13 @@ export default function VideoAICreator() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const ffmpegRef = useRef<FFmpeg | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [quality, setQuality] = useState<"480p" | "720p" | "1080p">("720p");
+
+    const resolutions = {
+        "480p": { w: 854, h: 480 },
+        "720p": { w: 1280, h: 720 },
+        "1080p": { w: 1920, h: 1080 }
+    };
 
     const loadFFmpeg = async () => {
         const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
@@ -68,6 +75,7 @@ export default function VideoAICreator() {
         setStatusText("جاري تحضير الملفات...");
 
         const ffmpeg = ffmpegRef.current;
+        const { w, h } = resolutions[quality];
 
         try {
             // Write images to FFmpeg FS
@@ -76,7 +84,7 @@ export default function VideoAICreator() {
                 await ffmpeg.writeFile(`img${i}.jpg`, imgData);
             }
 
-            setStatusText("جاري دمج الصور والنصوص...");
+            setStatusText(`جاري التوليد بدقة ${quality}...`);
 
             // Command to create video from images
             // -framerate 1: 1 second per image
@@ -92,7 +100,7 @@ export default function VideoAICreator() {
             await ffmpeg.exec([
                 "-framerate", "1",
                 "-i", "img%d.jpg",
-                "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,format=yuv420p",
+                "-vf", `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p`,
                 "-t", `${images.length}`,
                 "output.mp4"
             ]);
@@ -126,7 +134,7 @@ export default function VideoAICreator() {
         if (!videoUrl) return;
         const link = document.createElement("a");
         link.href = videoUrl;
-        link.download = `Toolxio_AI_Video_${Date.now()}.mp4`;
+        link.download = `Toolxio_AI_${quality}_Video_${Date.now()}.mp4`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -142,16 +150,17 @@ export default function VideoAICreator() {
                     <h2 className="text-2xl lg:text-3xl font-bold">منشئ الفيديو الاحترافي (FFmpeg)</h2>
                 </div>
                 <p className="text-muted-foreground text-sm lg:text-lg">
-                    دمج الصور والنصوص وتحويلها إلى فيديو MP4 مباشرة في متصفحك باستخدام FFmpeg.wasm.
+                    دمج الصور والنصوص وتحويلها إلى فيديو MP4 مباشرة في متصفحك بدقة عالية.
                 </p>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                 <div className="lg:col-span-1 space-y-4 lg:space-y-6">
                     <div className="glass-card p-4 lg:p-6 rounded-2xl">
-                        <label className="block text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-widest">
-                            الصور المختارة ({images.length})
-                        </label>
+                        <div className="flex items-center justify-between mb-3 text-muted-foreground uppercase tracking-widest">
+                            <label className="text-xs font-semibold">الصور المختارة ({images.length})</label>
+                            <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">{quality}</span>
+                        </div>
 
                         <div className="grid grid-cols-3 gap-2 mb-4 max-h-[200px] overflow-y-auto p-1">
                             {images.map((img, idx) => (
@@ -187,13 +196,33 @@ export default function VideoAICreator() {
                         </div>
 
                         <label className="block text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest">
+                            اختيار جودة الفيديو
+                        </label>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                            {(["480p", "720p", "1080p"] as const).map((q) => (
+                                <button
+                                    key={q}
+                                    onClick={() => setQuality(q)}
+                                    className={cn(
+                                        "py-2 rounded-xl text-xs font-bold transition-all border",
+                                        quality === q
+                                            ? "bg-purple-500 border-purple-400 text-white shadow-lg shadow-purple-500/20"
+                                            : "bg-muted border-border text-muted-foreground hover:border-purple-500/50"
+                                    )}
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+
+                        <label className="block text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest">
                             نص إضافي (اختياري)
                         </label>
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="اكتب وصفاً ليتم دمجه أو استخدامه كمرجع..."
-                            rows={3}
+                            placeholder="اكتب وصفاً ليتم دمجه..."
+                            rows={2}
                             className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none text-foreground text-sm mb-4"
                         />
 
@@ -209,11 +238,11 @@ export default function VideoAICreator() {
                         >
                             {isGenerating ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" /> جاري المعالجة...
+                                    <Loader2 className="w-5 h-5 animate-spin" /> جاري التوليد...
                                 </>
                             ) : (
                                 <>
-                                    <Wand2 className="w-5 h-5" /> بدء الدمج والتوليد
+                                    <Wand2 className="w-5 h-5" /> بدء التوليد
                                 </>
                             )}
                         </button>
