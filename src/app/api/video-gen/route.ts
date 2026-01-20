@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
         console.log("Starting Veo3 Actor with prompt:", prompt);
 
         // Trigger the Veo3 actor
-        // We use the full actor ID
-        const run = await client.actor("powerai/veo3-video-generator").call({
+        // We use .start() instead of .call() to return immediately and avoid Vercel timeouts
+        const run = await client.actor("powerai/veo3-video-generator").start({
             prompt,
             aspect_ratio: aspectRatio,
         });

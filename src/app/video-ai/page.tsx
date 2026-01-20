@@ -96,14 +96,30 @@ export default function VideoAICreator() {
         }, 5000); // Poll every 5 seconds
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!videoUrl) return;
-        const link = document.createElement("a");
-        link.href = videoUrl;
-        link.download = `Toolxio_AI_Video_${Date.now()}.mp4`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        try {
+            setStatusText("جاري تحضير التحميل...");
+            const response = await fetch(videoUrl);
+            if (!response.ok) throw new Error("Download failed");
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Toolxio_AI_Video_${Date.now()}.mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            setStatusText("تم التحميل بنجاح!");
+        } catch (error) {
+            console.error("Download error:", error);
+            // Fallback: If fetch fails (CORS), open in new tab
+            window.open(videoUrl, "_blank");
+            setStatusText("تم فتح الفيديو في نافذة جديدة (فشل التحميل المباشر)");
+        }
     };
 
     return (
