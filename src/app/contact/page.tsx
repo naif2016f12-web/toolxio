@@ -20,7 +20,7 @@ export default function ContactPage() {
                         </div>
                         <div>
                             <h3 className="font-bold text-foreground text-lg">البريد الإلكتروني</h3>
-                            <p className="text-muted-foreground">support@toolxio.com</p>
+                            <p className="text-muted-foreground">naif2016f12@gmail.com</p>
                         </div>
                     </div>
 
