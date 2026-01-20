@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
@@ -10,7 +11,9 @@ import {
     FileSearch,
     Settings,
     HelpCircle,
-    Sparkles
+    Sparkles,
+    Menu,
+    X
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,55 +31,82 @@ const sidebarItems = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Close sidebar when navigating on mobile
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname]);
 
     return (
-        <aside className="w-64 h-screen bg-card border-l border-border flex flex-col fixed right-0 top-0 z-50">
-            <div className="p-6">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-                    Toolxio
-                </h1>
-            </div>
+        <>
+            {/* Mobile Toggle Button */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="lg:hidden fixed top-4 right-4 z-[60] p-3 rounded-xl bg-accent text-white shadow-lg shadow-blue-500/20"
+            >
+                {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
 
-            <nav className="flex-1 px-4 space-y-2 mt-4">
-                {sidebarItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                                isActive
-                                    ? "bg-accent text-white shadow-lg shadow-blue-500/20"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            )}
-                        >
-                            <item.icon className={cn(
-                                "w-5 h-5",
-                                isActive ? "text-white" : "text-muted-foreground group-hover:text-blue-400"
-                            )} />
-                            <span className="font-medium">{item.name}</span>
-                        </Link>
-                    );
-                })}
-            </nav>
+            {/* Backdrop for mobile */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[40] lg:hidden"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
 
-            <div className="p-4 border-t border-border mt-auto">
-                <PWAInstall />
-                <div className="mt-4 grid grid-cols-2 gap-2 mb-4">
-                    <Link href="/privacy" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">سياسة الخصوصية</Link>
-                    <Link href="/terms" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">شروط الاستخدام</Link>
-                    <Link href="/contact" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors col-span-2 text-center">اتصل بنا</Link>
+            <aside className={cn(
+                "w-64 h-screen bg-card border-l border-border flex flex-col fixed right-0 top-0 z-50 transition-transform duration-300 ease-in-out lg:translate-x-0",
+                isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+            )}>
+                <div className="p-6">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                        Toolxio
+                    </h1>
                 </div>
-                <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors mt-2">
-                    <Settings className="w-5 h-5" />
-                    <span className="font-medium">الإعدادات</span>
-                </button>
-                <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors">
-                    <HelpCircle className="w-5 h-5" />
-                    <span className="font-medium">مركز المساعدة</span>
-                </button>
-            </div>
-        </aside>
+
+                <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+                    {sidebarItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                    isActive
+                                        ? "bg-accent text-white shadow-lg shadow-blue-500/20"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                <item.icon className={cn(
+                                    "w-5 h-5",
+                                    isActive ? "text-white" : "text-muted-foreground group-hover:text-blue-400"
+                                )} />
+                                <span className="font-medium">{item.name}</span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                <div className="p-4 border-t border-border mt-auto">
+                    <PWAInstall />
+                    <div className="mt-4 grid grid-cols-2 gap-2 mb-4">
+                        <Link href="/privacy" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">سياسة الخصوصية</Link>
+                        <Link href="/terms" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">شروط الاستخدام</Link>
+                        <Link href="/contact" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors col-span-2 text-center">اتصل بنا</Link>
+                    </div>
+                    <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors mt-2">
+                        <Settings className="w-5 h-5" />
+                        <span className="font-medium">الإعدادات</span>
+                    </button>
+                    <button className="flex items-center gap-3 px-4 py-3 w-full text-muted-foreground hover:text-foreground transition-colors">
+                        <HelpCircle className="w-5 h-5" />
+                        <span className="font-medium">مركز المساعدة</span>
+                    </button>
+                </div>
+            </aside>
+        </>
     );
 }
