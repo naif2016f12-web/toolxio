@@ -25,9 +25,13 @@ export async function POST(req: NextRequest) {
         console.log("Starting Veo3 Actor with prompt:", prompt);
 
         // Trigger the Veo3 actor
-        // We use .start() instead of .call() to return immediately and avoid Vercel timeouts
+        // Trigger the Veo3 actor
+        // We use .start() instead of .call() for non-blocking execution.
+        // Based on logs, this actor behaves like a scraper, so we send 'query' and 'search' as well.
         const run = await client.actor("powerai/veo3-video-generator").start({
-            prompt,
+            prompt: prompt,
+            query: prompt,   // Likely the correct parameter for a scraper
+            search: prompt,  // Fallback
             aspect_ratio: aspectRatio,
         });
 
