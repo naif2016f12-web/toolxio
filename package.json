@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "clsx": "^2.1.1",
     "docx": "^9.5.1",
     "framer-motion": "^12.27.1",
