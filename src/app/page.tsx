@@ -58,15 +58,15 @@ export default function Home() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <header className="mb-12">
-        <div className="flex items-center gap-2 mb-4">
+      <header className="mb-8 lg:mb-12">
+        <div className="flex items-center gap-2 mb-3 lg:mb-4">
           <div className="p-2 rounded-lg bg-blue-500/10">
             <Sparkles className="w-5 h-5 text-blue-500" />
           </div>
-          <span className="text-sm font-semibold text-blue-500 uppercase tracking-wider">تكامل الذكاء الاصطناعي</span>
+          <span className="text-xs lg:text-sm font-semibold text-blue-500 uppercase tracking-wider">تكامل الذكاء الاصطناعي</span>
         </div>
-        <h2 className="text-4xl font-bold mb-4">مرحباً بك في Toolxio</h2>
-        <p className="text-muted-foreground text-lg max-w-2xl">
+        <h2 className="text-3xl lg:text-4xl font-bold mb-3 lg:mb-4">مرحباً بك في Toolxio</h2>
+        <p className="text-muted-foreground text-base lg:text-lg max-w-2xl px-1">
           منصتك الشاملة لإنشاء المستندات الذكية وأدوات الوسائط.
           اختر أداة مدعومة بالذكاء الاصطناعي أدناه للبدء.
         </p>

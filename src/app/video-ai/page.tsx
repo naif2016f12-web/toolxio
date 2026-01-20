@@ -76,40 +76,40 @@ export default function VideoAICreator() {
 
     return (
         <div className="max-w-5xl mx-auto">
-            <header className="mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 rounded-xl bg-purple-500/10">
-                        <Sparkles className="w-6 h-6 text-purple-500" />
+            <header className="mb-6 lg:mb-8 text-center lg:text-right">
+                <div className="flex flex-col lg:flex-row items-center gap-3 mb-3 lg:mb-4">
+                    <div className="p-2 lg:p-3 rounded-xl bg-purple-500/10 w-fit">
+                        <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
                     </div>
-                    <h2 className="text-3xl font-bold">منشئ الفيديو بالذكاء الاصطناعي (AI Video)</h2>
+                    <h2 className="text-2xl lg:text-3xl font-bold">منشئ الفيديو بالذكاء الاصطناعي</h2>
                 </div>
-                <p className="text-muted-foreground text-lg">
-                    حوّل وصفك النصي إلى فيديوهات سينمائية مذهلة. استخدم قوة الذكاء الاصطناعي لتوليد المشاهد والتحريكات.
+                <p className="text-muted-foreground text-sm lg:text-lg">
+                    حوّل وصفك النصي إلى فيديوهات سينمائية مذهلة باستخدام قوة الذكاء الاصطناعي.
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="glass-card p-6 rounded-2xl">
-                        <label className="block text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-widest">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                <div className="lg:col-span-1 space-y-4 lg:space-y-6">
+                    <div className="glass-card p-4 lg:p-6 rounded-2xl">
+                        <label className="block text-[10px] lg:text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-widest">
                             وصف الفيديو (Prompt)
                         </label>
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="مثال: رائد فضاء يسير على سطح القمر بأسلوب سينمائي، إضاءة نيون زرقاء..."
-                            rows={5}
-                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none text-foreground"
+                            placeholder="مثال: رائد فضاء يسير على سطح القمر بأسلوب سينمائي..."
+                            rows={4}
+                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none text-foreground text-sm"
                         />
 
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                            <div className="p-3 bg-muted/50 rounded-xl border border-border flex flex-col gap-2">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground">جودة الفيديو</span>
-                                <span className="text-sm font-medium">4K Ultra HD</span>
+                        <div className="mt-4 lg:mt-6 grid grid-cols-2 gap-2 lg:gap-3">
+                            <div className="p-2 lg:p-3 bg-muted/50 rounded-xl border border-border flex flex-col gap-1">
+                                <span className="text-[8px] lg:text-[10px] uppercase font-bold text-muted-foreground">الجودة</span>
+                                <span className="text-xs lg:text-sm font-medium">4K Ultra HD</span>
                             </div>
-                            <div className="p-3 bg-muted/50 rounded-xl border border-border flex flex-col gap-2">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground">النمط</span>
-                                <span className="text-sm font-medium">سينمائي</span>
+                            <div className="p-2 lg:p-3 bg-muted/50 rounded-xl border border-border flex flex-col gap-1">
+                                <span className="text-[8px] lg:text-[10px] uppercase font-bold text-muted-foreground">النمط</span>
+                                <span className="text-xs lg:text-sm font-medium">سينمائي</span>
                             </div>
                         </div>
 
@@ -117,7 +117,7 @@ export default function VideoAICreator() {
                             onClick={startGeneration}
                             disabled={isGenerating || !prompt}
                             className={cn(
-                                "w-full mt-6 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all",
+                                "w-full mt-4 lg:mt-6 py-3 lg:py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm lg:text-base",
                                 isGenerating || !prompt
                                     ? "bg-muted text-muted-foreground cursor-not-allowed"
                                     : "bg-gradient-to-r from-purple-500 to-indigo-600 hover:shadow-xl hover:shadow-purple-500/20 active:scale-[0.98] text-white"
@@ -131,13 +131,13 @@ export default function VideoAICreator() {
                         </button>
                     </div>
 
-                    <div className="glass-card p-6 rounded-2xl">
-                        <h4 className="font-semibold mb-4 text-sm uppercase text-muted-foreground">خيارات إضافية</h4>
-                        <div className="space-y-3">
-                            <button className="w-full p-3 rounded-xl bg-muted/30 border border-border/50 flex items-center gap-3 text-sm hover:bg-muted/50 transition-colors">
+                    <div className="glass-card p-4 lg:p-6 rounded-2xl">
+                        <h4 className="font-semibold mb-3 lg:mb-4 text-xs lg:text-sm uppercase text-muted-foreground">خيارات إضافية</h4>
+                        <div className="space-y-2 lg:space-y-3">
+                            <button className="w-full p-2 lg:p-3 rounded-xl bg-muted/30 border border-border/50 flex items-center gap-2 lg:gap-3 text-xs lg:text-sm hover:bg-muted/50 transition-colors">
                                 <ImageIcon className="w-4 h-4 text-blue-400" /> إضافة صور كمرجع
                             </button>
-                            <button className="w-full p-3 rounded-xl bg-muted/30 border border-border/50 flex items-center gap-3 text-sm hover:bg-muted/50 transition-colors">
+                            <button className="w-full p-2 lg:p-3 rounded-xl bg-muted/30 border border-border/50 flex items-center gap-2 lg:gap-3 text-xs lg:text-sm hover:bg-muted/50 transition-colors">
                                 <Music className="w-4 h-4 text-pink-400" /> اختيار موسيقى خلفية
                             </button>
                         </div>
