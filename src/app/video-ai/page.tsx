@@ -8,6 +8,7 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 export default function VideoAICreator() {
+    const [mode, setMode] = useState<"local" | "ai">("local");
     const [prompt, setPrompt] = useState("");
     const [images, setImages] = useState<File[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -20,6 +21,10 @@ export default function VideoAICreator() {
     const ffmpegRef = useRef<FFmpeg | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [quality, setQuality] = useState<"480p" | "720p" | "1080p">("720p");
+
+    // AI Mode States
+    const [aiRunId, setAiRunId] = useState<string | null>(null);
+    const pollInterval = useRef<NodeJS.Timeout | null>(null);
 
     const resolutions = {
         "480p": { w: 854, h: 480 },
@@ -34,25 +39,28 @@ export default function VideoAICreator() {
 
         ffmpeg.on("log", ({ message }) => {
             console.log(message);
-            if (message.includes("frame=")) {
-                const parts = message.split("frame=")[1].trim().split(" ");
-                // Rough progress based on frames if we knew total, but for now just log
-            }
         });
 
         ffmpeg.on("progress", ({ progress: p }) => {
             setProgress(Math.round(p * 100));
         });
 
-        await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-        });
-        console.log("FFmpeg loaded!");
+        try {
+            await ffmpeg.load({
+                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+            });
+            console.log("FFmpeg loaded!");
+        } catch (err) {
+            console.error("Failed to load FFmpeg", err);
+        }
     };
 
     useEffect(() => {
         loadFFmpeg();
+        return () => {
+            if (pollInterval.current) clearInterval(pollInterval.current);
+        };
     }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +73,7 @@ export default function VideoAICreator() {
         setImages(images.filter((_, i) => i !== index));
     };
 
-    const startGeneration = async () => {
+    const startLocalGeneration = async () => {
         if (!ffmpegRef.current || images.length === 0) return;
 
         setIsGenerating(true);
@@ -78,24 +86,12 @@ export default function VideoAICreator() {
         const { w, h } = resolutions[quality];
 
         try {
-            // Write images to FFmpeg FS
             for (let i = 0; i < images.length; i++) {
                 const imgData = await fetchFile(images[i]);
                 await ffmpeg.writeFile(`img${i}.jpg`, imgData);
             }
 
             setStatusText(`جاري التوليد بدقة ${quality}...`);
-
-            // Command to create video from images
-            // -framerate 1: 1 second per image
-            // -i img%d.jpg: input pattern
-            // -c:v libx264: video codec
-            // -pix_fmt yuv420p: compatibility
-            // Scaling and padding to ensure even dimensions (required by libx264)
-
-            // For text overlay: we can use drawtext but it requires font files. 
-            // Minimal approach: just merge images. 
-            // Advanced: use drawtext if we had a font.
 
             await ffmpeg.exec([
                 "-framerate", "1",
@@ -119,6 +115,77 @@ export default function VideoAICreator() {
         }
     };
 
+    const startAiGeneration = async () => {
+        if (!prompt) return;
+
+        setIsGenerating(true);
+        setProgress(10);
+        setVideoGenerated(false);
+        setVideoUrl("");
+        setStatusText("جاري إرسال الطلب لمحرك Veo3 AI...");
+
+        try {
+            const response = await fetch("/api/video-gen", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt, aspectRatio: "16:9" }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setAiRunId(data.runId);
+                startPolling(data.runId);
+            } else {
+                throw new Error(data.error || "Failed to start AI generation");
+            }
+        } catch (error: any) {
+            console.error("AI Generation Error:", error);
+            setStatusText(`خطأ: ${error.message}`);
+            setIsGenerating(false);
+        }
+    };
+
+    const startPolling = (runId: string) => {
+        setStatusText("جاري توليد الفيديو بواسطة الذكاء الاصطناعي (قد يستغرق دقائق)...");
+        setProgress(30);
+
+        pollInterval.current = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/video-gen?runId=${runId}`);
+                const data = await response.json();
+
+                console.log("Polling AI Status:", data.status, data);
+
+                if (data.status === "SUCCEEDED") {
+                    if (pollInterval.current) clearInterval(pollInterval.current);
+
+                    if (data.videoUrl) {
+                        setVideoUrl(data.videoUrl);
+                        setVideoGenerated(true);
+                        setIsGenerating(false);
+                        setProgress(100);
+                        setStatusText("تم توليد الفيديو بنجاح!");
+                    } else {
+                        console.error("Video URL is missing in successful result");
+                        setStatusText("فشل في الحصول على رابط الفيديو من النتيجة");
+                        setIsGenerating(false);
+                    }
+                } else if (data.status === "FAILED" || data.status === "ABORTED" || data.status === "TIMED-OUT") {
+                    if (pollInterval.current) clearInterval(pollInterval.current);
+                    setStatusText(`فشل التوليد: ${data.status}`);
+                    setIsGenerating(false);
+                } else {
+                    // Update progress mockly for AI
+                    setStatusText(`جاري التوليد... الحالة: ${data.status}`);
+                    setProgress((prev) => Math.min(prev + 1, 98));
+                }
+            } catch (error) {
+                console.error("Polling error:", error);
+            }
+        }, 5000); // Poll every 5 seconds
+    };
+
     const togglePlay = () => {
         if (videoRef.current) {
             if (isPlaying) {
@@ -134,7 +201,7 @@ export default function VideoAICreator() {
         if (!videoUrl) return;
         const link = document.createElement("a");
         link.href = videoUrl;
-        link.download = `Toolxio_AI_${quality}_Video_${Date.now()}.mp4`;
+        link.download = `Toolxio_Video_${Date.now()}.mp4`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -143,122 +210,183 @@ export default function VideoAICreator() {
     return (
         <div className="max-w-5xl mx-auto">
             <header className="mb-6 lg:mb-8 text-center lg:text-right">
-                <div className="flex flex-col lg:flex-row items-center gap-3 mb-3 lg:mb-4">
+                <div className="flex flex-col lg:flex-row items-center gap-3 mb-3 lg:mb-4 justify-center lg:justify-start">
                     <div className="p-2 lg:p-3 rounded-xl bg-purple-500/10 w-fit">
                         <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-purple-500" />
                     </div>
-                    <h2 className="text-2xl lg:text-3xl font-bold">منشئ الفيديو الاحترافي (FFmpeg)</h2>
+                    <h2 className="text-2xl lg:text-3xl font-bold">منشئ الفيديو الاحترافي الذكي</h2>
                 </div>
                 <p className="text-muted-foreground text-sm lg:text-lg">
-                    دمج الصور والنصوص وتحويلها إلى فيديو MP4 مباشرة في متصفحك بدقة عالية.
+                    اختر بين التوليد المحلي السريع أو استخدام محركات الذكاء الاصطناعي المتقدمة (Google Veo3).
                 </p>
             </header>
+
+            <div className="flex justify-center mb-8">
+                <div className="bg-muted p-1 rounded-2xl flex gap-1">
+                    <button
+                        onClick={() => setMode("local")}
+                        className={cn(
+                            "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
+                            mode === "local" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <ImageIcon className="w-4 h-4" /> معالجة محلية
+                    </button>
+                    <button
+                        onClick={() => setMode("ai")}
+                        className={cn(
+                            "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
+                            mode === "ai" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <Sparkles className="w-4 h-4" /> توليد بالذكاء الاصطناعي
+                    </button>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                 <div className="lg:col-span-1 space-y-4 lg:space-y-6">
                     <div className="glass-card p-4 lg:p-6 rounded-2xl">
-                        <div className="flex items-center justify-between mb-3 text-muted-foreground uppercase tracking-widest">
-                            <label className="text-xs font-semibold">الصور المختارة ({images.length})</label>
-                            <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">{quality}</span>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2 mb-4 max-h-[200px] overflow-y-auto p-1">
-                            {images.map((img, idx) => (
-                                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border border-border">
-                                    <img
-                                        src={URL.createObjectURL(img)}
-                                        className="w-full h-full object-cover"
-                                        alt="preview"
-                                    />
-                                    <button
-                                        onClick={() => removeImage(idx)}
-                                        className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
+                        {mode === "local" ? (
+                            <>
+                                <div className="flex items-center justify-between mb-3 text-muted-foreground uppercase tracking-widest">
+                                    <label className="text-xs font-semibold">الصور المختارة ({images.length})</label>
+                                    <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-bold">{quality}</span>
                                 </div>
-                            ))}
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground hover:text-accent hover:border-accent transition-all gap-1"
-                            >
-                                <Plus className="w-5 h-5" />
-                                <span className="text-[10px]">إضافة</span>
-                            </button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                multiple
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleFileChange}
-                            />
-                        </div>
 
-                        <label className="block text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest">
-                            اختيار جودة الفيديو
-                        </label>
-                        <div className="grid grid-cols-3 gap-2 mb-4">
-                            {(["480p", "720p", "1080p"] as const).map((q) => (
+                                <div className="grid grid-cols-3 gap-2 mb-4 max-h-[200px] overflow-y-auto p-1">
+                                    {images.map((img, idx) => (
+                                        <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group border border-border">
+                                            <img
+                                                src={URL.createObjectURL(img)}
+                                                className="w-full h-full object-cover"
+                                                alt="preview"
+                                            />
+                                            <button
+                                                onClick={() => removeImage(idx)}
+                                                className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground hover:text-accent hover:border-accent transition-all gap-1"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        <span className="text-[10px]">إضافة</span>
+                                    </button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        multiple
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                    />
+                                </div>
+
+                                <label className="block text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest text-right">
+                                    اختيار جودة الفيديو
+                                </label>
+                                <div className="grid grid-cols-3 gap-2 mb-6">
+                                    {(["480p", "720p", "1080p"] as const).map((q) => (
+                                        <button
+                                            key={q}
+                                            onClick={() => setQuality(q)}
+                                            className={cn(
+                                                "py-2 rounded-xl text-xs font-bold transition-all border",
+                                                quality === q
+                                                    ? "bg-purple-500 border-purple-400 text-white shadow-lg shadow-purple-500/20"
+                                                    : "bg-muted border-border text-muted-foreground hover:border-purple-500/50"
+                                            )}
+                                        >
+                                            {q}
+                                        </button>
+                                    ))}
+                                </div>
+
                                 <button
-                                    key={q}
-                                    onClick={() => setQuality(q)}
+                                    onClick={startLocalGeneration}
+                                    disabled={isGenerating || images.length === 0}
                                     className={cn(
-                                        "py-2 rounded-xl text-xs font-bold transition-all border",
-                                        quality === q
-                                            ? "bg-purple-500 border-purple-400 text-white shadow-lg shadow-purple-500/20"
-                                            : "bg-muted border-border text-muted-foreground hover:border-purple-500/50"
+                                        "w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg",
+                                        isGenerating || images.length === 0
+                                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                            : "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-purple-500/20 hover:shadow-purple-500/40 text-white"
                                     )}
                                 >
-                                    {q}
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" /> جاري التوليد...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wand2 className="w-5 h-5" /> بدء التوليد المحلي
+                                        </>
+                                    )}
                                 </button>
-                            ))}
-                        </div>
+                            </>
+                        ) : (
+                            <>
+                                <label className="block text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-widest text-right">
+                                    وصف الفيديو (Prompt)
+                                </label>
+                                <textarea
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    placeholder="مثال: رائد فضاء يركض في صحراء من الزمرد، أسلوب سينمائي، دقة 4K..."
+                                    rows={5}
+                                    className="w-full bg-muted border border-border rounded-2xl px-4 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none text-foreground text-sm mb-6 text-right"
+                                />
 
-                        <label className="block text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-widest">
-                            نص إضافي (اختياري)
-                        </label>
-                        <textarea
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="اكتب وصفاً ليتم دمجه..."
-                            rows={2}
-                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none text-foreground text-sm mb-4"
-                        />
+                                <div className="p-4 bg-purple-500/5 border border-purple-500/10 rounded-xl mb-6">
+                                    <h4 className="text-[10px] font-bold text-purple-500 mb-1 uppercase text-right">تلميحات:</h4>
+                                    <p className="text-[10px] text-muted-foreground leading-relaxed text-right">
+                                        كلما كان الوصف دقيقاً، كانت مخرجات الذكاء الاصطناعي أفضل. يمكنك ذكر الإضاءة، الحركة، والأسلوب الفني.
+                                    </p>
+                                </div>
 
-                        <button
-                            onClick={startGeneration}
-                            disabled={isGenerating || images.length === 0}
-                            className={cn(
-                                "w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg",
-                                isGenerating || images.length === 0
-                                    ? "bg-muted text-muted-foreground cursor-not-allowed"
-                                    : "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-purple-500/20 hover:shadow-purple-500/40 text-white"
-                            )}
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" /> جاري التوليد...
-                                </>
-                            ) : (
-                                <>
-                                    <Wand2 className="w-5 h-5" /> بدء التوليد
-                                </>
-                            )}
-                        </button>
+                                <button
+                                    onClick={startAiGeneration}
+                                    disabled={isGenerating || !prompt}
+                                    className={cn(
+                                        "w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg",
+                                        isGenerating || !prompt
+                                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                                            : "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-purple-500/20 hover:shadow-purple-500/40 text-white"
+                                    )}
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" /> جاري التحليل...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-5 h-5" /> توليد بواسطة AI
+                                        </>
+                                    )}
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     <div className="p-4 bg-accent/10 border border-accent/20 rounded-xl">
-                        <h4 className="text-xs font-bold text-accent mb-1 uppercase">ملاحظة تقنية:</h4>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed">
-                            تتم المعالجة بالكامل داخل متصفحك باستخدام تقنية WebAssembly.
-                            لا يتم رفع صورك إلى أي خادم، مما يضمن خصوصية تامة وسرعة في التنفيذ.
+                        <h4 className="text-xs font-bold text-accent mb-1 uppercase text-right">
+                            {mode === "local" ? "معالجة خصوصية:" : "معالجة سحابية:"}
+                        </h4>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed text-right">
+                            {mode === "local"
+                                ? "تتم المعالجة بالكامل داخل متصفحك باستخدام WebAssembly. لا يتم رفع صورك إلى أي خادم."
+                                : "يتم إرسال طلبك لمحركات Veo3 المتقدمة. قد يستغرق التوليد من دقيقة إلى 3 دقائق."
+                            }
                         </p>
                     </div>
                 </div>
 
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="glass-card aspect-video rounded-3xl overflow-hidden relative border-2 border-border/50 group bg-black">
+                    <div className="glass-card aspect-video rounded-3xl overflow-hidden relative border-2 border-border/50 group bg-black shadow-2xl">
                         <AnimatePresence mode="wait">
                             {isGenerating ? (
                                 <motion.div
@@ -279,12 +407,15 @@ export default function VideoAICreator() {
                                             {progress}%
                                         </div>
                                     </div>
-                                    <h3 className="text-xl font-bold mb-2">{statusText}</h3>
+                                    <h3 className="text-xl font-bold mb-2 text-white">{statusText}</h3>
                                     <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                                        يتم الآن تشغيل محرك FFmpeg لمعالجة كل إطار من إطارات الفيديو الخاص بك.
+                                        {mode === "local"
+                                            ? "يتم الآن تشغيل محرك FFmpeg لمعالجة كل إطار من إطارات الفيديو الخاص بك."
+                                            : "خوادمنا تعمل الآن على تحويل كلماتك إلى مشاهد بصرية واقعية عبر نماذج Google Veo3."
+                                        }
                                     </p>
 
-                                    <div className="w-full max-w-md mt-10 h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div className="w-full max-w-md mt-10 h-1.5 bg-muted/20 rounded-full overflow-hidden">
                                         <motion.div
                                             className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
                                             initial={{ width: 0 }}
@@ -304,19 +435,29 @@ export default function VideoAICreator() {
                                         src={videoUrl}
                                         className="w-full h-full object-contain bg-black"
                                         controls
+                                        autoPlay
                                         onPlay={() => setIsPlaying(true)}
                                         onPause={() => setIsPlaying(false)}
                                     />
                                 </motion.div>
                             ) : (
                                 <div className="absolute inset-0 bg-muted/20 flex flex-col items-center justify-center gap-4 p-8 text-center">
-                                    <div className="p-4 rounded-full bg-muted/50">
-                                        <Video className="w-12 h-12 text-muted-foreground/30" />
+                                    <div className="p-6 rounded-3xl bg-muted/50 border border-border/50">
+                                        {mode === "local" ? (
+                                            <Video className="w-12 h-12 text-muted-foreground/30" />
+                                        ) : (
+                                            <Sparkles className="w-12 h-12 text-purple-500/30" />
+                                        )}
                                     </div>
                                     <div>
-                                        <p className="text-foreground font-bold text-lg mb-1">جاهز للبدء</p>
-                                        <p className="text-muted-foreground text-sm max-w-[250px]">
-                                            قم بإضافة حزمتك من الصور ثم اضغط على زر التوليد لصناعة الفيديو.
+                                        <p className="text-foreground font-bold text-xl mb-1 mt-2">
+                                            {mode === "local" ? "جاهز للدمج المحلي" : "جاهز للابتكار بالذكاء الاصطناعي"}
+                                        </p>
+                                        <p className="text-muted-foreground text-sm max-w-[300px]">
+                                            {mode === "local"
+                                                ? "أضف الصور التي تريد دمجها في فيديو واحد بدقة عالية."
+                                                : "صف المشهد الذي تتخيله وسنقوم بتحويله إلى فيديو حقيقي."
+                                            }
                                         </p>
                                     </div>
                                 </div>
@@ -328,11 +469,13 @@ export default function VideoAICreator() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="flex flex-col sm:flex-row items-center justify-between p-5 lg:p-6 glass-card rounded-2xl gap-4"
+                            className="flex flex-col sm:flex-row items-center justify-between p-5 lg:p-6 glass-card rounded-2xl gap-4 border-l-4 border-l-green-500"
                         >
                             <div className="text-center sm:text-right w-full sm:w-auto">
-                                <h4 className="font-bold text-lg text-green-400">تم صنع الفيديو بنجاح! ✨</h4>
-                                <p className="text-xs text-muted-foreground">التنسيق: MP4 • دقة عالية • معالج محلياً</p>
+                                <h4 className="font-bold text-lg text-white">تم صنع الفيديو بنجاح! ✨</h4>
+                                <p className="text-xs text-muted-foreground">
+                                    {mode === "local" ? "معالجة محلية • MP4 • دقة عالية" : "توليد AI • Google Veo3 • جودة سينمائية"}
+                                </p>
                             </div>
                             <button
                                 onClick={handleDownload}

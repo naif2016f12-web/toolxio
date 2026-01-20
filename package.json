@@ -11,6 +11,7 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
+    "apify-client": "^2.21.0",
     "clsx": "^2.1.1",
     "docx": "^9.5.1",
     "framer-motion": "^12.27.1",
